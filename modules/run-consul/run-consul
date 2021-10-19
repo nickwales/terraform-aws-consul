@@ -333,6 +333,9 @@ EOF
   },
   "ui_config": {
     "enabled": $ui_config_enabled
+  },
+  "connect": {
+    "enabled":
   }
 }
 EOF
