@@ -13,24 +13,60 @@ terraform {
 # ATTACH AN IAM POLICY THAT ALLOWS THE CONSUL NODES TO AUTOMATICALLY DISCOVER EACH OTHER AND FORM A CLUSTER
 # ---------------------------------------------------------------------------------------------------------------------
 
-resource "aws_iam_role_policy" "auto_discover_cluster" {
-  count  = var.enabled ? 1 : 0
-  name   = "auto-discover-cluster"
-  role   = var.iam_role_id
-  policy = data.aws_iam_policy_document.auto_discover_cluster.json
+// resource "aws_iam_role_policy" "auto_discover_cluster" {
+//   count  = var.enabled ? 1 : 0
+//   name   = "auto-discover-cluster"
+//   role   = var.iam_role_id
+//   policy = data.aws_iam_policy_document.auto_discover_cluster.json
+// }
+
+// data "aws_iam_policy_document" "auto_discover_cluster" {
+//   statement {
+//     effect = "Allow"
+
+//     actions = [
+//       "ec2:DescribeInstances",
+//       "ec2:DescribeTags",
+//       "autoscaling:DescribeAutoScalingGroups",
+//     ]
+
+//     resources = ["*"]
+//   }
+// }
+
+resource "aws_iam_role" "consul" {
+  count              = var.enabled ? 1 : 0
+  name_prefix               = "nwales-consul"
+  assume_role_policy = data.aws_iam_policy_document.instance_role.json
 }
 
-data "aws_iam_policy_document" "auto_discover_cluster" {
+data "aws_iam_policy" "ReadOnlyAccess" {
+  arn = "arn:aws:iam::aws:policy/AmazonEC2ReadOnlyAccess"
+}
+
+data "aws_iam_policy" "SSMManagedInstance" {
+  arn = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
+}
+
+
+resource "aws_iam_role_policy_attachment" "read-only-attach" {
+  role       = "${aws_iam_role.consul.0.name}"
+  policy_arn = "${data.aws_iam_policy.ReadOnlyAccess.arn}"
+}
+
+resource "aws_iam_role_policy_attachment" "ssm-managed-attach" {
+  role       = "${aws_iam_role.consul.0.name}"
+  policy_arn = "${data.aws_iam_policy.SSMManagedInstance.arn}"
+}
+
+data "aws_iam_policy_document" "instance_role" {
   statement {
-    effect = "Allow"
+    effect  = "Allow"
+    actions = ["sts:AssumeRole"]
 
-    actions = [
-      "ec2:DescribeInstances",
-      "ec2:DescribeTags",
-      "autoscaling:DescribeAutoScalingGroups",
-    ]
-
-    resources = ["*"]
+    principals {
+      type        = "Service"
+      identifiers = ["ec2.amazonaws.com"]
+    }
   }
 }
-
