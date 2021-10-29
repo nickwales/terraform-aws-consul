@@ -36,7 +36,7 @@ terraform {
 
 resource "aws_iam_role" "consul" {
   count              = var.enabled ? 1 : 0
-  name_prefix               = "nwales-consul"
+  name_prefix        = var.cluster_name
   assume_role_policy = data.aws_iam_policy_document.instance_role.json
 }
 
