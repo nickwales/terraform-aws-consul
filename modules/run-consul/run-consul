@@ -335,7 +335,7 @@ EOF
     "enabled": $ui_config_enabled
   },
   "connect": {
-    "enabled":
+    "enabled": true
   }
 }
 EOF
